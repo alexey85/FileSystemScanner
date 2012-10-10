@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,8 +17,10 @@ public class Main {
 
     public static void main(String[] args) {
         final String url = args[0];
+        final File targetDir = new File(url);
+        final File logDir = new File(targetDir, "logs");
+        logDir.mkdirs();
         DirectoryScanner scanner = new DirectoryScanner(url, TimeUnit.SECONDS, Integer.valueOf(args[1]));
-        new File(url + "\\logs").mkdir();
         scanner.addOnChangeAction(new Action() {
 
             Logger log = LoggerFactory.getLogger(getClass());
@@ -28,23 +28,16 @@ public class Main {
             @Override
             public void execute() {
                 try {
-                    Process process = Runtime.getRuntime().exec("cmd /c cd " + url + " && mvn clean install");
-                    InputStream in = process.getInputStream();
 
-                    File file = new File(url + "\\logs\\" + System.currentTimeMillis() + "_build.log");
-                    file.createNewFile();
-                    FileOutputStream fos = new FileOutputStream(file);
-
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = in.read(buffer)) != -1)
-                    {
-                        fos.write(buffer, 0, bytesRead);
-                    }
+                    File logFile = new File(logDir, System.currentTimeMillis() + "_build.log");
+                    log.info("starting new process, log file :" + logFile.getName());
+                    Process process = new ProcessBuilder("mvn", "clean", "package")
+                            .directory(targetDir)
+                            .redirectOutput(logFile)
+                            .redirectError(logFile)
+                            .start();
                     int exitVal = process.waitFor();
-                    fos.write(String.valueOf("exit code: " + exitVal).getBytes());
-                    fos.flush();
-                    fos.close();
+                    log.info("exit code: " + exitVal);
                 } catch (Throwable t) {
                     log.error("", t);
                 }
