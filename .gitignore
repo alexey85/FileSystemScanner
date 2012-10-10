@@ -1,6 +1,9 @@
 *.class
-
+.*
+*~
+FileSystemScanner.iml
 # Package Files #
 *.jar
 *.war
 *.ear
+logs
