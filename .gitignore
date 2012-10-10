@@ -7,3 +7,5 @@ FileSystemScanner.iml
 *.war
 *.ear
 logs
+src/test/testWorkDir/logs/
+src/test/testWorkDir/target/
